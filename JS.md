@@ -101,21 +101,227 @@ var f = new Fn();
 
 原汁原味的 toString，防止 toString 被重写
 Object.prototype.toString.call()
-```js
-  let a = Object.prototype.toString;
 
-  a.call(2)
-  a.call([])
+```js
+let a = Object.prototype.toString;
+
+a.call(2);
+a.call([]);
 ```
-=> 为啥这里要用 call？同样是检测 obj 调用 toString, obj.prototype.toString().call(obj)结果不一样？为什么？**
+
+=> 为啥这里要用 call？同样是检测 obj 调用 toString, obj.prototype.toString().call(obj)结果不一样？为什么？\*\*
 
 保证 toString 是 Object 上的原型方法，根据原型链知识，优先调用本对象属性 => 原型链
 
-=> 当对象中有某个属性和 Object 的属性重名时，使用的顺序是什么样的？如果说优先使用 Object 属性，如何做？**
+=> 当对象中有某个属性和 Object 的属性重名时，使用的顺序是什么样的？如果说优先使用 Object 属性，如何做？\*\*
 
 #### 类型转换
-1. isNaN 和 Number.isNaN 的区别？ **
-isNaN 包含了一个隐式转化。
-  isNaN => 接受参数 => 尝试参数转成数值型 => 不能被转换数值的参数 返回 true => 非数字值传入返回 true
 
-  Number.isNaN => 接受参数 => 判断参数是否为数字 => 判断是否为 NaN => 不会进行数据类型转换
+1. isNaN 和 Number.isNaN 的区别？ \*\*
+   isNaN 包含了一个隐式转化。
+   isNaN => 接受参数 => 尝试参数转成数值型 => 不能被转换数值的参数 返回 true => 非数字值传入返回 true
+
+Number.isNaN => 接受参数 => 判断参数是否为数字 => 判断是否为 NaN => 不会进行数据类型转换
+
+2. 既然说到了类型转换，有没有其他的类型转换场景？ \*\*\*
+   转换成字符串：
+   Null 和 Undefined => 'null' 'undefined'
+   Boolean => 'true' 'false'
+   Number => '数字' 大数据 会转换成带有指数形式
+   Symbol => '内容'
+   普通对象 => '[Object Object]'
+
+转成数字：
+undefined => NaN
+Null => 0
+Boolean => true | 1 false | 0
+String => 包含非数字的值 NaN 空 0
+Symbol => 报错
+对象 => 相应的基本值类型 => 相应的转换
+
+转成 Boolean：
+undefined | null | false | +0 -0 | NaN | "" => false
+
+3.原始数据类型如何具有属性操作？ \*\*\*
+前置知识： js 的包装类型
+原始数据类型，在调用属性和方法时，js 会在后台隐性的将基本类型转换成对象
+
+```js
+let a = "zhaowa";
+
+a.length; //6
+
+// js 在收集阶段
+Object(a); // String { 'zhaowa' }
+
+// => 去包装
+let a = "zhaowa";
+let b = Object(a);
+let c = b.valueOf(); // 'zhaowa'
+```
+
+=> 说说下面代码执行结果？
+
+```js
+let a = new Boolean(false); // => Boolean {}
+if (!a) {
+  console.log("hi zhaowa");
+}
+// never print
+```
+
+#### 数组操作的相关问题
+
+1. 数组的操作基本方法？如何使用？\*
+   转换方法： toString() toLocalString() join()
+   尾操作： pop() push()
+   首操作： shift() unshift()
+   排序：reverse() sort()
+   连接： concat()
+   截取： slice()
+   插入： splice()
+   索引：indexOf()
+   迭代方法：every() some() filter() map() forEach()
+   归并： reduce()
+
+#### 变量提升 & 作用域
+
+1. 谈谈对于变量提升以及作用域的理解？
+   现象：
+   无论在任何位置声明的函数、变量都被提升到模块、函数的顶部
+
+JS 实现原理：
+解析 | 执行
+解析： 检查语法、预编译，代码中即将执行的变量和函数声明调整到全局顶部，并赋值为 undefined，上下文、arguments、函数参数
+全局上下文：变量定义，函数声明
+函数上下文：变量定义，函数声明，this，arguments
+
+    再去执行阶段，按照代码顺序从上而下逐行运行
+
+变量提升存在意义？
+提升性能 解析引用提升了性能，不要执行到时重新解析
+更加灵活 补充定义这样一种玩法
+
+指出特殊 case
+let const 取消了变量提升机制的玩法
+
+#### 闭包
+
+1. 什么是闭包？闭包的作用？ \*
+   在一个函数中访问另一个函数作用域中变量的方法
+
+闭包的作用：
+函数外部可以访问到函数内部的变量。
+跨作用域，创建私有变量
+已经运行结束的逻辑，依然残留在闭包里，变量得不到回收
+
+2. 闭包经典题目结果和改造方式？
+
+```js
+for (var i = 1; i < 9; i++) {
+  setTimeout(
+    (function a() {
+      console.log(i);
+    },
+    i * 1000)
+  );
+}
+
+// 利用闭包解决
+for (var i = 1; i < 9; i++) {
+  (function (j) {
+    setTimeout(
+      (function a() {
+        console.log(j);
+      },
+      j * 1000)
+    );
+  })(i);
+}
+
+// 利用作用域 let 具有块级作用域
+for (let i = 1; i < 9; i++) {
+  setTimeout(
+    (function a() {
+      console.log(i);
+    },
+    i * 1000)
+  );
+}
+```
+
+#### ES6
+
+1. 叛逆型问题：const 对象的属性可以修改吗？new 一个箭头函数会发生什么呢？\*\*
+   const 只能保证指针固定不变的，指向的数据结构属性，无法控制是否变化的
+
+new 执行全过程：
+创建一个对象
+构造函数作用域付给新对象
+指向构造函数后，构造函数中的 this 指向该对象
+返回一个新的对象
+箭头函数 没有 prototype， 也没有独立的 this 指向，更没有 arguments
+
+2. JS ES 内置对象有哪些？ \*\*
+   内置对象
+   值属性类：Infinity、NaN、undefined、 null
+   函数属性： eval(), parseInt()
+   对象：Object, Function, Boolean, Symbol, Error
+   数字：Number, Math, Date
+   字符串: String, RegExp
+   集合：Map, set, weakMap
+   抽象控制： promise
+   映射： proxy
+
+#### 原型 & 原型链
+
+1. 简单说说原型和原型链理解？ \*
+   构造函数：
+   Js 中用来构造新建一个对象的
+
+构造函数内部有一个属性叫 prototype => 值是一个对象
+=> 包含了共享的属性和方法
+使用了构造函数创建对象后，被创建对象内部会存在一个指针 （**proto**） => 指向构造函数 prototype 属性的对应值
+
+链式获取属性规则：
+对象的属性 => 对象内部本身是否包含该属性
+=> 顺着指针去原型对象里查找
+=> 再往上层级里去查找
+
+2. 继承方式？ \*
+
+#### 异步编程
+
+1. 聊聊遇到哪些异步执行方式？ \*
+   回调函数 => cb 回调地狱
+   promise => 链式调用 => 语义的并不明确
+   generator => 考虑如何控制执行 co 库
+   async await => 在不改变同步书写习惯的前提下，异步处理
+
+2. 聊聊 promise 的理解 \*
+   一个对象、一个容器 => 触发操作
+   三个状态： pending | resolved | rejected
+   两个过程： pending => resolved pending => rejected
+   promise 缺点：
+   无法取消
+   pending 状态，无细分状态
+
+#### 内存 & 浏览器执行相关
+
+1. 简单说说看垃圾回收的理解？ \*
+   垃圾回收的概念：
+   js 具有自动的垃圾回收机制，找到不再使用的变量，释放其占用的内存空间
+   js 存在两种变量：
+   局部变量 + 全局变量
+
+2. 现代浏览器如何处理垃圾回收？ \*\*
+   标记清楚、引用计数
+
+内存中所有变量加上标记，当前环境状态。定期进行标记变量的回收。
+
+变量加上的是被引用使用的使用方个数。降低到 0 时自动清楚
+
+3. 减少垃圾的方案 \*\*\*
+   数组优化：清空数组时，赋值一个[] => length = 0
+   object 优化： 对象尽量复用，减少深拷贝
+   函数的优化：循环中的函数表达式，尽量统一放到外面（函数提升）
